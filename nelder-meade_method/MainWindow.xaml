@@ -41,11 +41,11 @@
         <DockPanel Grid.Row="1">
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10">
                 <Label Content="Координаты точки:" FontSize="20"></Label>
-                <TextBox Text="{Binding OutputPoint}" Name="OutputPoint" Width="198" FontSize="22" VerticalAlignment="Stretch" TextAlignment="Left" VerticalContentAlignment="Center" Padding="5,0,0,0"/>
+                <TextBox Text="{Binding OutputPoint}" Name="OutputPoint" Width="198" FontSize="22" VerticalAlignment="Stretch" TextAlignment="Left" VerticalContentAlignment="Center" Padding="5,0,0,0" IsReadOnly="True"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10">
                 <Label Content="Значение функции:" FontSize="20"></Label>
-                <TextBox Text="{Binding OutputResultFunction}" Name="OutputFunction" Width="198" FontSize="22" VerticalAlignment="Stretch" TextAlignment="Left" VerticalContentAlignment="Center" Padding="5,0,0,0"/>
+                <TextBox Text="{Binding OutputResultFunction}" Name="OutputFunction" Width="198" FontSize="22" VerticalAlignment="Stretch" TextAlignment="Left" VerticalContentAlignment="Center" Padding="5,0,0,0" IsReadOnly="True"/>
             </StackPanel>
         </DockPanel>
     </Grid>
