@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Windows;
 using System.Linq;
-using nelder_meade_method.Models;
-using System.Windows.Input;
 using Vector = nelder_meade_method.Models.Vector;
 
 namespace nelder_meade_method.ViewModels
@@ -15,6 +13,8 @@ namespace nelder_meade_method.ViewModels
         private PlotModel _plotModel;
         private List<DataPoint> _points;
         private string _function;
+        private string _outputResultFunction;
+        private string _outputPoint;
         public PlotModel PlotModel
         {
             get { return _plotModel; }
@@ -29,6 +29,30 @@ namespace nelder_meade_method.ViewModels
                 {
                     _function = value;
                     OnPropertyChanged("Function");
+                }
+            }
+        }
+        public string OutputResultFunction
+        {
+            get { return _outputResultFunction; }
+            set
+            {
+                if (!string.Equals(_outputResultFunction, value))
+                {
+                    _outputResultFunction = value;
+                    OnPropertyChanged("OutputResultFunction");
+                }
+            }
+        }
+        public string OutputPoint
+        {
+            get { return _outputPoint; }
+            set
+            {
+                if (!string.Equals(_outputPoint, value))
+                {
+                    _outputPoint = value;
+                    OnPropertyChanged("OutputPoint");
                 }
             }
         }
@@ -57,7 +81,7 @@ namespace nelder_meade_method.ViewModels
         {
 
             float alpha = 1, beta = 0.5f, gamma = 2;
-            float best, worst, good;
+            float best = 0, worst, good;
 
             Vector bestVector = new Vector(0, 0);
             Vector averageVector = new Vector(1, 0);
@@ -154,6 +178,9 @@ namespace nelder_meade_method.ViewModels
                 }
             }
             RefreshPlot();
+            OutputResultFunction = System.Math.Round(best, 4).ToString();
+            OutputPoint = System.Math.Round(bestVector.X, 4).ToString() + ";" + System.Math.Round(bestVector.Y, 4).ToString();
+
         }
         #endregion
         public void AddPoint(DataPoint point)
