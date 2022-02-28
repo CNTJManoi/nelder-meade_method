@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Windows;
 using System.Linq;
+using nelder_meade_method.Models;
 using System.Windows.Input;
+using Vector = nelder_meade_method.Models.Vector;
 
 namespace nelder_meade_method.ViewModels
 {
@@ -53,85 +55,103 @@ namespace nelder_meade_method.ViewModels
 
         private void CalculateExecute(object obj)
         {
-            DataPoint bestVector = new DataPoint(0, 0);
-            DataPoint averageVector = new DataPoint(1, 0);
-            DataPoint worstVector = new DataPoint(0, 1);
-            float alpha = 1, beta = 0.5f, omega;
+
+            float alpha = 1, beta = 0.5f, gamma = 2;
             float best, worst, good;
-            List<DataPoint> points = new List<DataPoint>();
-            points.Add(new DataPoint(0, 0));
-            points.Add(new DataPoint(1, 0));
-            points.Add(new DataPoint(0, 1));
-            ClearPoints();
+
+            Vector bestVector = new Vector(0, 0);
+            Vector averageVector = new Vector(1, 0);
+            Vector worstVector = new Vector(0, 1);
+
+            List<Vector> points = new List<Vector>();
             List<float> res = new List<float>();
+
+            points.Add(new Vector(0, 0));
+            points.Add(new Vector(1, 0));
+            points.Add(new Vector(0, 1));
+
+            ClearPoints();
+
             foreach (var point in points)
             {
-                AddPoint(point);
+                AddPoint(new DataPoint(point.X, point.Y));
             }
-            AddPoint(points[0]);
+            AddPoint(new DataPoint(points[0].X, points[0].Y));
+
             int count = 0;
-            best = (float)Calculation.CalcFunc(Function, (float)bestVector.X, (float)bestVector.Y);
-            worst = best;
             while (count != 11)
             {
-                int iMin = 0, iMax = 0, iAverage = 0;
-                int i = 0;
-                best = (float)Calculation.CalcFunc(Function, (float)bestVector.X, (float)bestVector.Y);
-                worst = best;
+                int iMin = 0, iMax = 0, iAverage = 0; //индексы
                 foreach (var point in points)
                 {
                     float? val = Calculation.CalcFunc(Function, (float)point.X, (float)point.Y);
                     if (val == null)
                     {
-                        MessageBox.Show("Обнаружена ошибка!");
+                        MessageBox.Show("Обнаружена ошибка в формуле!");
                         return;
                     }
                     res.Add((float)val);
                 }
-                best = res.Min();
-                worst = res.Max();
-                iMin = res.IndexOf(best);
-                iMax = res.IndexOf(worst);
+                best = res.Min(); //поиск лучшей точки
+                worst = res.Max(); //поиск худшей точки
+                iMin = res.IndexOf(best); //запись индексов точек
+                iMax = res.IndexOf(worst); //запись индексов точек
+                //Поиск индекса среднего числа
                 if (iMin == 0 && iMax == 1 || iMax == 0 && iMin == 1) iAverage = 2;
                 else if (iMin == 0 && iMax == 2 || iMax == 0 && iMin == 2) iAverage = 1;
                 else iAverage = 0;
                 good = res[iAverage];
-                float xMid = (float)((points[iMin].X + points[iAverage].X) / 2);
-                float yMid = (float)((points[iMin].Y + points[iAverage].Y) / 2);
-                DataPoint xr = new DataPoint(xMid + (xMid - points[iMax].X), yMid + (yMid - points[iMax].Y));
-                DataPoint xe;
+
+                Vector b = points[iMin]; //инициализация векторов
+                Vector g = points[iAverage];
+                Vector w = points[iMax];
+
+                Vector mid = (b + g) / 2; //поиск средней точки между точками best и good
+
+                //reflection
+                Vector xr = mid + (mid - w) * alpha;
+                if (Calculation.CalcFunc(Function, (float)xr.X, (float)xr.Y) < good) w = xr; //good
+                else
+                {
+                    if (Calculation.CalcFunc(Function, (float)xr.X, (float)xr.Y) < worst) w = xr; //worst
+                    Vector c = (w + mid) / 2;
+                    if (Calculation.CalcFunc(Function, (float)c.X, (float)c.Y) < worst) w = c;
+                }
+                //expansion
                 if (Calculation.CalcFunc(Function, (float)xr.X, (float)xr.Y) < best)
                 {
-                    xe = new DataPoint(xr.X * 2 - xMid, xr.Y * 2 - yMid);
-                    if (Calculation.CalcFunc(Function, (float)xe.X, (float)xe.Y) < best)
+                    Vector xe = mid + (xr - mid) * gamma;
+                    if (Calculation.CalcFunc(Function, (float)xe.X, (float)xe.Y) < Calculation.CalcFunc(Function, (float)xr.X, (float)xr.Y))
                     {
-                        bestVector = xe;
-                        AddPoint(xe);
+                        w = xe;
                     }
                     else
                     {
-                        bestVector = xr;
-                        AddPoint(xr);
+                        w = xr;
                     }
                 }
-                else
+                //contraction
+                if(Calculation.CalcFunc(Function, (float)xr.X, (float)xr.Y) > good)
                 {
-                    DataPoint xc = new DataPoint(xMid + beta * (worstVector.X - xMid), yMid + beta * (worstVector.Y - yMid));
-                    if (Calculation.CalcFunc(Function, (float)xc.X, (float)xc.Y) < best)
+                    Vector xc = mid + (w - mid) * beta;
+                    if (Calculation.CalcFunc(Function, (float)xc.X, (float)xc.Y) < worst) w = xc;
                     {
-                        bestVector = xc;
-                        AddPoint(xc);
+                        w = xc;
                     }
                 }
                 count++;
-                averageVector = points[iMin];
-                worstVector = points[iAverage];
+                averageVector = g;
+                worstVector = w;
+                bestVector = b;
                 points.Clear();
                 points.Add(bestVector);
                 points.Add(averageVector);
                 points.Add(worstVector);
                 res.Clear();
-
+                foreach (var point in points)
+                {
+                    AddPoint(new DataPoint(point.X, point.Y));
+                }
             }
             RefreshPlot();
         }
