@@ -7,7 +7,7 @@
         xmlns:local="clr-namespace:nelder_meade_method"
         xmlns:viewModels="clr-namespace:nelder_meade_method.ViewModels"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800" FontFamily="Times New Roman" FontSize="14">
+        Title="The Nelder - Mead optimization method" Height="450" Width="800" FontFamily="Times New Roman" FontSize="14">
     <Window.DataContext>
         <viewModels:MainWindowModel/>
     </Window.DataContext>
