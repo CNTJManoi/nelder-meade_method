@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Linq;
 using Vector = nelder_meade_method.Models.Vector;
+using System.Text.RegularExpressions;
 
 namespace nelder_meade_method.ViewModels
 {
@@ -12,9 +13,11 @@ namespace nelder_meade_method.ViewModels
     {
         private PlotModel _plotModel;
         private List<DataPoint> _points;
+        private List<float> _listResultFunction;
         private string _function;
         private string _outputResultFunction;
         private string _outputPoint;
+        private string _errorRate;
         public PlotModel PlotModel
         {
             get { return _plotModel; }
@@ -44,6 +47,18 @@ namespace nelder_meade_method.ViewModels
                 }
             }
         }
+        public string ErrorRate
+        {
+            get { return _errorRate; }
+            set
+            {
+                if (!string.Equals(_errorRate, value))
+                {
+                    _errorRate = value;
+                    OnPropertyChanged("ErrorRate");
+                }
+            }
+        }
         public string OutputPoint
         {
             get { return _outputPoint; }
@@ -60,8 +75,10 @@ namespace nelder_meade_method.ViewModels
         public MainWindowModel()
         {
             PlotModel = new PlotModel();
+            ErrorRate = "0.0001";
             Function = "x^2+x*y+y^2-6*x-9*y";
             _points = new List<DataPoint>();
+            _listResultFunction = new List<float>();
         }
         public List<DataPoint> Points { get { return _points; } private set { _points = value; } }
         #region Command
@@ -79,9 +96,19 @@ namespace nelder_meade_method.ViewModels
 
         private void CalculateExecute(object obj)
         {
-
+            float eps;
+            if (Regex.IsMatch(ErrorRate.Replace('.', ','), @"0\,[0]*[1]{1}$"))
+            {
+                eps = float.Parse(ErrorRate.Replace('.', ','));
+            }
+            else
+            {
+                MessageBox.Show("Введите корректно точность вычисления!");
+                return;
+            }
             float alpha = 1, beta = 0.5f, gamma = 2;
             float best = 0, worst, good;
+            float disspersion;
 
             Vector bestVector = new Vector(0, 0);
             Vector averageVector = new Vector(1, 0);
@@ -103,8 +130,12 @@ namespace nelder_meade_method.ViewModels
             AddPoint(new DataPoint(points[0].X, points[0].Y));
 
             int count = 0;
-            while (count != 11)
+            do
             {
+                if(count == 100000)
+                {
+                    OutputResultFunction = "Экстремума нет";
+                }
                 int iMin = 0, iMax = 0, iAverage = 0; //индексы
                 foreach (var point in points)
                 {
@@ -129,6 +160,11 @@ namespace nelder_meade_method.ViewModels
                 Vector b = points[iMin]; //инициализация векторов
                 Vector g = points[iAverage];
                 Vector w = points[iMax];
+
+                //Запись результатов
+                _listResultFunction.Add(best);
+                _listResultFunction.Add(worst);
+                _listResultFunction.Add(res[iAverage]);
 
                 Vector mid = (b + g) / 2; //поиск средней точки между точками best и good
 
@@ -155,7 +191,7 @@ namespace nelder_meade_method.ViewModels
                     }
                 }
                 //contraction
-                if(Calculation.CalcFunc(Function, (float)xr.X, (float)xr.Y) > good)
+                if (Calculation.CalcFunc(Function, (float)xr.X, (float)xr.Y) > good)
                 {
                     Vector xc = mid + (w - mid) * beta;
                     if (Calculation.CalcFunc(Function, (float)xc.X, (float)xc.Y) < worst) w = xc;
@@ -176,11 +212,24 @@ namespace nelder_meade_method.ViewModels
                 {
                     AddPoint(new DataPoint(point.X, point.Y));
                 }
-            }
+                disspersion = FindDispersion(_listResultFunction);
+                _listResultFunction.Clear();
+            } while (disspersion > eps);
             RefreshPlot();
             OutputResultFunction = System.Math.Round(best, 4).ToString();
             OutputPoint = System.Math.Round(bestVector.X, 4).ToString() + ";" + System.Math.Round(bestVector.Y, 4).ToString();
 
+        }
+        private float FindDispersion(List<float> nums)
+        {
+            int n = nums.Count;
+            float average = nums.Sum() / n;
+            float sum = 0;
+            foreach (float x in nums)
+            {
+                sum += (float)System.Math.Pow(x - average,2);
+            }
+            return sum / (n - 1);
         }
         #endregion
         public void AddPoint(DataPoint point)
