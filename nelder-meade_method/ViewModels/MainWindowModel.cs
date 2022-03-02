@@ -18,6 +18,8 @@ namespace nelder_meade_method.ViewModels
         private string _outputResultFunction;
         private string _outputPoint;
         private string _errorRate;
+        private string _infoAboutPoint;
+        private int step;
         public PlotModel PlotModel
         {
             get { return _plotModel; }
@@ -59,6 +61,18 @@ namespace nelder_meade_method.ViewModels
                 }
             }
         }
+        public string InfoPoint
+        {
+            get { return _infoAboutPoint; }
+            set
+            {
+                if (!string.Equals(_infoAboutPoint, value))
+                {
+                    _infoAboutPoint = value;
+                    OnPropertyChanged("InfoPoint");
+                }
+            }
+        }
         public string OutputPoint
         {
             get { return _outputPoint; }
@@ -76,6 +90,7 @@ namespace nelder_meade_method.ViewModels
         {
             PlotModel = new PlotModel();
             ErrorRate = "0.0001";
+            InfoPoint = "Ожидание функции...";
             Function = "x^2+x*y+y^2-6*x-9*y";
             _points = new List<DataPoint>();
             _listResultFunction = new List<float>();
@@ -88,10 +103,40 @@ namespace nelder_meade_method.ViewModels
         {
             get { return _beginCalculate ?? (_beginCalculate = new DelegateCommand(CalculateExecute, CanCalculateExecute)); }
         }
+        private DelegateCommand _prevStep;
+        public DelegateCommand PrevStep
+        {
+            get { return _prevStep ?? (_prevStep = new DelegateCommand(GoToPrevStep, PrevStepExecute)); }
+        }
+        private DelegateCommand _nextStep;
+        public DelegateCommand NextStep
+        {
+            get { return _nextStep ?? (_nextStep = new DelegateCommand(GoToNextStep, NextStepExecute)); }
+        }
 
         private bool CanCalculateExecute(object obj)
         {
             return true;
+        }
+        private bool PrevStepExecute(object obj)
+        {
+            if (step == 0) return false;
+            else return true;
+        }
+        private void GoToPrevStep(object obj)
+        {
+            step--;
+            RefreshPlot();
+        }
+        private void GoToNextStep(object obj)
+        {
+            step++;
+            RefreshPlot();
+        }
+        private bool NextStepExecute(object obj)
+        {
+            if ((step+1) == Points.Count || Points.Count == 0) return false;
+            else return true;
         }
 
         private void CalculateExecute(object obj)
@@ -109,6 +154,7 @@ namespace nelder_meade_method.ViewModels
             float alpha = 1, beta = 0.5f, gamma = 2;
             float best = 0, worst, good;
             float disspersion = 0;
+            step = 3;
 
             Vector bestVector = new Vector(0, 0);
             Vector averageVector = new Vector(1, 0);
@@ -251,11 +297,21 @@ namespace nelder_meade_method.ViewModels
         }
         public void RefreshPlot()
         {
+            List<DataPoint> datas = new List<DataPoint>();
+            for (int i = 0; i <= step && i < Points.Count; i++)
+            {
+                datas.Add(Points[i]);
+            }
             PlotModel.Series.Clear();
             LineSeries series = new LineSeries();
-            series.Points.AddRange(Points);
+            series.Points.AddRange(datas);
             PlotModel.Series.Add(series);
             PlotModel.InvalidatePlot(true);
+            PrevStep.RaiseCanExecuteChanged();
+            NextStep.RaiseCanExecuteChanged();
+            InfoPoint = string.Format("Точка номер {0}: ({1}; {2})",step,
+                System.Math.Round(Points[step].X,4),
+                System.Math.Round(Points[step].Y,4));
         }
         public event PropertyChangedEventHandler PropertyChanged;
         protected virtual void OnPropertyChanged(string propertyName)
