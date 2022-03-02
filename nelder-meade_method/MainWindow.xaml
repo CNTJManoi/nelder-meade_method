@@ -23,8 +23,12 @@
         <StackPanel Grid.Column="1" Grid.RowSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center">
             <Label HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="22">Графическая иллюстрация симплекса</Label>
             <Label HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="18" Content="{Binding InfoPoint}"></Label>
-            <oxy:PlotView Model="{Binding PlotModel}" Height="300" Width="300" BorderBrush="Black"/>
+            <oxy:PlotView Model="{Binding PlotModel}" Height="260" Width="300" BorderBrush="Black"/>
             <DockPanel>
+                <CheckBox IsChecked="{Binding TypeIsThreePoints}" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="10,10,0,10" DockPanel.Dock="Top" Content="Включить тип отображения по 3 точки" FontSize="18"></CheckBox>
+                <Button HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20" Command="{Binding PresentAllPoints}" DockPanel.Dock="Bottom" Margin="0,10,0,0">
+                    <TextBlock Margin="5">Показать все точки</TextBlock>
+                </Button>
                 <Button HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20" Command="{Binding PrevStep}">
                     <TextBlock Margin="5">Предыдущий шаг</TextBlock>
                 </Button>

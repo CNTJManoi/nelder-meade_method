@@ -19,7 +19,9 @@ namespace nelder_meade_method.ViewModels
         private string _outputPoint;
         private string _errorRate;
         private string _infoAboutPoint;
-        private int step;
+        private bool _isThreePoints;
+        private int _step;
+        private int _valStep;
         public PlotModel PlotModel
         {
             get { return _plotModel; }
@@ -34,6 +36,22 @@ namespace nelder_meade_method.ViewModels
                 {
                     _function = value;
                     OnPropertyChanged("Function");
+                }
+            }
+        }
+        public bool TypeIsThreePoints
+        {
+            get { return _isThreePoints; }
+            set
+            {
+                if (!bool.Equals(_isThreePoints, value))
+                {
+                    _isThreePoints = value;
+                    if (value) _valStep = 3;
+                    else _valStep = 1;
+                    _step = 3;
+                    RefreshPlot();
+                    OnPropertyChanged("TypeIsThreePoints");
                 }
             }
         }
@@ -92,6 +110,7 @@ namespace nelder_meade_method.ViewModels
             ErrorRate = "0.0001";
             InfoPoint = "Ожидание функции...";
             Function = "x^2+x*y+y^2-6*x-9*y";
+            _valStep = 1;
             _points = new List<DataPoint>();
             _listResultFunction = new List<float>();
         }
@@ -113,29 +132,44 @@ namespace nelder_meade_method.ViewModels
         {
             get { return _nextStep ?? (_nextStep = new DelegateCommand(GoToNextStep, NextStepExecute)); }
         }
-
+        private DelegateCommand _presentAllPoints;
+        public DelegateCommand PresentAllPoints
+        {
+            get { return _presentAllPoints ?? (_presentAllPoints = new DelegateCommand(PresentAllPointsExecute, CanPresentAllPointsExecute)); }
+        }
+        private bool CanPresentAllPointsExecute(object obj)
+        {
+            if (Points.Count == 0) return false;
+            else return true;
+        }
+        private void PresentAllPointsExecute(object obj)
+        {
+            TypeIsThreePoints = false;
+            _step = Points.Count - 1;
+            RefreshPlot();
+        }
         private bool CanCalculateExecute(object obj)
         {
             return true;
         }
         private bool PrevStepExecute(object obj)
         {
-            if (step == 0) return false;
+            if (_step == 0) return false;
             else return true;
         }
         private void GoToPrevStep(object obj)
         {
-            step--;
+            _step -= _valStep;
             RefreshPlot();
         }
         private void GoToNextStep(object obj)
         {
-            step++;
+            _step += _valStep;
             RefreshPlot();
         }
         private bool NextStepExecute(object obj)
         {
-            if ((step+1) == Points.Count || Points.Count == 0) return false;
+            if ((_step+1) == Points.Count || Points.Count == 0) return false;
             else return true;
         }
 
@@ -154,7 +188,7 @@ namespace nelder_meade_method.ViewModels
             float alpha = 1, beta = 0.5f, gamma = 2;
             float best = 0, worst, good;
             float disspersion = 0;
-            step = 3;
+            _step = 3;
 
             Vector bestVector = new Vector(0, 0);
             Vector averageVector = new Vector(1, 0);
@@ -246,9 +280,9 @@ namespace nelder_meade_method.ViewModels
                 worstVector = w;
                 bestVector = b;
                 points.Clear();
-                points.Add(bestVector);
-                points.Add(averageVector);
                 points.Add(worstVector);
+                points.Add(averageVector);
+                points.Add(bestVector);
                 res.Clear();
                 foreach (var point in points)
                 {
@@ -298,7 +332,14 @@ namespace nelder_meade_method.ViewModels
         public void RefreshPlot()
         {
             List<DataPoint> datas = new List<DataPoint>();
-            for (int i = 0; i <= step && i < Points.Count; i++)
+            if (TypeIsThreePoints)
+            {
+                for (int i = _step - 3; i <= _step && i < Points.Count; i++)
+                {
+                    datas.Add(Points[i]);
+                }
+            } else
+            for (int i = 0; i <= _step && i < Points.Count; i++)
             {
                 datas.Add(Points[i]);
             }
@@ -309,9 +350,10 @@ namespace nelder_meade_method.ViewModels
             PlotModel.InvalidatePlot(true);
             PrevStep.RaiseCanExecuteChanged();
             NextStep.RaiseCanExecuteChanged();
-            InfoPoint = string.Format("Точка номер {0}: ({1}; {2})",step,
-                System.Math.Round(Points[step].X,4),
-                System.Math.Round(Points[step].Y,4));
+            PresentAllPoints.RaiseCanExecuteChanged();
+            InfoPoint = string.Format("Точка номер {0}: ({1}; {2})",_step,
+                System.Math.Round(Points[_step].X,4),
+                System.Math.Round(Points[_step].Y,4));
         }
         public event PropertyChangedEventHandler PropertyChanged;
         protected virtual void OnPropertyChanged(string propertyName)
