@@ -108,7 +108,7 @@ namespace nelder_meade_method.ViewModels
             }
             float alpha = 1, beta = 0.5f, gamma = 2;
             float best = 0, worst, good;
-            float disspersion;
+            float disspersion = 0;
 
             Vector bestVector = new Vector(0, 0);
             Vector averageVector = new Vector(1, 0);
@@ -132,10 +132,6 @@ namespace nelder_meade_method.ViewModels
             int count = 0;
             do
             {
-                if(count == 100000)
-                {
-                    OutputResultFunction = "Экстремума нет";
-                }
                 int iMin = 0, iMax = 0, iAverage = 0; //индексы
                 foreach (var point in points)
                 {
@@ -214,11 +210,20 @@ namespace nelder_meade_method.ViewModels
                 }
                 disspersion = FindDispersion(_listResultFunction);
                 _listResultFunction.Clear();
+                if (count == 100000)
+                {
+                    OutputResultFunction = "Экстремума нет";
+                    return;
+                }
             } while (disspersion > eps);
+            if (float.IsNaN(disspersion))
+            {
+                OutputResultFunction = "Экстремума нет";
+                return;
+            }
             RefreshPlot();
             OutputResultFunction = System.Math.Round(best, 4).ToString();
             OutputPoint = System.Math.Round(bestVector.X, 4).ToString() + ";" + System.Math.Round(bestVector.Y, 4).ToString();
-
         }
         private float FindDispersion(List<float> nums)
         {
